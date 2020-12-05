@@ -75,7 +75,6 @@ request = HTTPRequest.new(msg)
 
 adapted_request = HTTPRequestServerAdapter.new(request)
 
-response = Server.new(adapted_request).response # works
-p response
+p Server.new(adapted_request).response # works
 
-response = Server.new(request).response # TypeError incompatible type
+p Server.new(request).response # TypeError incompatible type
