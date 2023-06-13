@@ -5,37 +5,34 @@ require "ostruct"
 
 # Can only send a message in text form
 class HTTPRequest
-  attr_reader :message
+  attr_reader(:message, :server)
 
-  def initialize(message)
+  def initialize(message, server)
     @message = message
+    @server = server
+  end
+
+  def send_request
+    server.call(self)
   end
 end
 
 # Can only process a message that is in a Hash form
 class Server
-  attr_reader :request
 
-  def initialize(request)
+  def call(request)
     raise TypeError.new("Incompatible type: Request message must be a hash") unless request.message.is_a? Hash
-    @request = request.message
-  end
-
-  def response
-    request
+    request.message
   end
 end
 
 # Provides an interface for communication between the two incompatible entities (HTTPRequest and Server)
-class HTTPRequestServerAdapter
-  attr_reader :request
-  def initialize(request)
-    @request = request
+class HTTPRequestServerAdapter < HTTPRequest
+  def initialize(message, server)
+    super(parse(message), server)
   end
 
-  def message
-    parse(request.message)
-  end
+  private
 
   def parse(msg)
     head, body =  msg.split("\n\n")
@@ -71,10 +68,13 @@ msg = <<~MSG
         }
       MSG
 
-request = HTTPRequest.new(msg)
 
-adapted_request = HTTPRequestServerAdapter.new(request)
+server = Server.new
+request = HTTPRequest.new(msg, server)
 
-p Server.new(adapted_request).response # works
+request.send_request # TypeError incompatible type
 
-p Server.new(request).response # TypeError incompatible type
+adapted_request = HTTPRequestServerAdapter.new(msg, server)
+
+p adapted_request.send_request # works
+
